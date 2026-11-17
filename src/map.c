@@ -1,10 +1,11 @@
 #include <raylib.h>
 #include "game.h"
+#include "utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "resource_dir.h"
 
-Map *read_map(char* map_path){
+Map *read_map(char* map_path, int tile_size){
 
     Map* map = malloc(sizeof(Map));
 
@@ -35,7 +36,6 @@ Map *read_map(char* map_path){
     fclose(fptr);
 
     // Map tiles
-
     map->tiles = (char**)malloc(map->resolution.y * sizeof(char*));
 
     // failed to allocate memory
@@ -49,6 +49,10 @@ Map *read_map(char* map_path){
 
     fptr = fopen(map_path, "r");
 
+    Vector2 margin = {(GetRenderWidth() - map->resolution.x * tile_size)/2, (GetRenderHeight() - map->resolution.y * tile_size)/2};
+
+    //(SCREEN_HEIGHT - map->resolution.y * tile_size)/2
+
     for (int y = 0; y < map->resolution.y; y++){
         for (int x = 0; x < map->resolution.x; x++){
 
@@ -59,9 +63,9 @@ Map *read_map(char* map_path){
                 character = fgetc(fptr);
             }
             
-            if (character == 'p') map->spawn_pos = (Vector2){ x, y };
+            if (character == 'p') map->spawn_pos = tileToPosition((Vector2){ x, y }, margin, tile_size);
 
-            if (character == 'f') map->porta_pos = (Vector2){ x, y };
+            if (character == 'f') map->porta_pos = tileToPosition((Vector2){ x, y }, margin, tile_size);
 
             map->tiles[y][x] = character;
 
@@ -71,58 +75,100 @@ Map *read_map(char* map_path){
     fclose(fptr);
 
     
-    int rect_size = 0;
-    int rect_count = 0;
+    int collision_size = 0;
+    int collision_count = 0;
+
+    int ladder_size = 0;
+    int ladder_count = 0;
 
     const int max_rects = ((int)(map->resolution.x * map->resolution.y) % 2) ? (map->resolution.x * map->resolution.y) / 2 + 1 : (map->resolution.x * map->resolution.y) / 2;
 
-    Vector2* positions = (Vector2*)malloc(max_rects * sizeof(Vector2));
-    Vector2* sizes = (Vector2*)malloc(max_rects * sizeof(Vector2));
+    
+    Vector2* collisions_positions = (Vector2*)malloc(max_rects * sizeof(Vector2));
+    Vector2* collisions_sizes = (Vector2*)malloc(max_rects * sizeof(Vector2));
+
+    Vector2* ladders_positions = (Vector2*)malloc(max_rects * sizeof(Vector2));
+    Vector2* ladders_sizes = (Vector2*)malloc(max_rects * sizeof(Vector2));
 
     for (int y = 0; y < map->resolution.y; y++){
         for (int x = 0; x < map->resolution.x; x++){
 
-            if (map->tiles[y][x] == 'z') rect_size++;
+            if (map->tiles[y][x] == 'z') collision_size++;
+            
 
-            // Se não for vazio e o proximo elemento não for z ou final da linha, completa o rect
-            if ( rect_size != 0 && ( (x == map->resolution.x - 1 && map->tiles[y][x] == 'z') || (x < map->resolution.x - 1 && map->tiles[y][x+1] != 'z') ) ){   
+            // complete the rect if there isnt a 'z' in the next position
+            if (collision_size != 0 && ((x == map->resolution.x - 1 && map->tiles[y][x] == 'z') || (x < map->resolution.x - 1 && map->tiles[y][x+1] != 'z'))){   
 
-                positions[rect_count].x = (x - rect_size + 1);
-                positions[rect_count].y = y;
-                sizes[rect_count].x = rect_size;
-                sizes[rect_count].y = 1;
+                collisions_positions[collision_count].x = (x - collision_size + 1);
+                collisions_positions[collision_count].y = y;
+                collisions_sizes[collision_count].x = collision_size;
+                collisions_sizes[collision_count].y = 1;
 
-                rect_count++;
-                rect_size = 0;
+                collision_count++;
+                collision_size = 0;
 
             }
-
         }
     }
 
-    int screen_width = GetScreenWidth();
+    for (int x = 0; x < map->resolution.x; x++){
+        for (int y = 0; y < map->resolution.y; y++){     
+            
+            int is_ladder = (map->tiles[y][x] == 's' || map->tiles[y][x] == 'h' || map->tiles[y][x] == 'd');
 
-    float tile_size = screen_width / map->resolution.x;
+            if (is_ladder) ladder_size++;
 
-    map->collisions_quantity = rect_count;
+            if (ladder_size != 0 && (y == map->resolution.y - 1 && is_ladder || (x < map->resolution.y - 1 && (map->tiles[y+1][x] != 's' && map->tiles[y+1][x] != 'h' && map->tiles[y+1][x] != 'd')))){
+
+                ladders_positions[ladder_count].x = x;
+                ladders_positions[ladder_count].y = (y - ladder_size + 1);
+                ladders_sizes[ladder_count].x = 1;
+                ladders_sizes[ladder_count].y = ladder_size;
+
+                ladder_count++;
+                ladder_size = 0;
+
+            }
+        }
+    }
+
+    map->collisions_quantity = collision_count;
 
     map->collisions = (Rectangle*)malloc(map->collisions_quantity * sizeof(Rectangle));
 
-        for (int i = 0; i < map->collisions_quantity; i++){
+    for (int i = 0; i < map->collisions_quantity; i++){
 
-            map->collisions[i] = (Rectangle){
-            (float)positions[i].x * tile_size,
-            (float)positions[i].y * tile_size,
-            (float)sizes[i].x * tile_size,
-            (float)sizes[i].y * tile_size
+        Vector2 position = tileToPosition(collisions_positions[i], margin, tile_size);
+
+        map->collisions[i] = (Rectangle){
+
+            (float)position.x,
+            (float)position.y,
+            (float)collisions_sizes[i].x * tile_size,
+            (float)collisions_sizes[i].y * tile_size
         };
             
-        //printf("props[%d]: { %.2f, %.2f, %.2f, %.2f }\n", i, positions[i].x, positions[i].y, sizes[i].x, sizes[i].y);
-        //printf("Rect[%d]: { %.2f, %.2f, %.2f, %.2f }\n", i, map->collisions[i].x, map->collisions[i].y, map->collisions[i].width, map->collisions[i].height);
-    
     }
 
+    map->ladders_quantity = ladder_count;
 
+    map->ladders = (Rectangle*)malloc(map->ladders_quantity * sizeof(Rectangle));
+
+    for (int i = 0; i < map->ladders_quantity; i++){
+
+        Vector2 position = tileToPosition(ladders_positions[i], margin, tile_size);
+
+        map->ladders[i] = (Rectangle){
+            (float)position.x,
+            (float)position.y,
+            (float)ladders_sizes[i].x * tile_size,
+            (float)ladders_sizes[i].y * tile_size
+        };
+
+    }
+
+    free(collisions_positions);
+    free(collisions_sizes);
 
     return map;
 }

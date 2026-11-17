@@ -1,10 +1,12 @@
 #include <raylib.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "resource_dir.h"
 #include "game.h"
-#include <stdio.h>
+#include "utils.h"
 
-#define SCREEN_WIDTH 900
-#define SCREEN_HEIGHT 900
+#define SCREEN_WIDTH 1920
+#define SCREEN_HEIGHT 1080
 
 #define TAM_FONT 30
 #define TAM_FONT_BIG 60
@@ -29,13 +31,20 @@ int main ()
 	int quit = 0;
 	int pause = 0;
 
-	Map* map = read_map("map1.txt");
+	int scale = 2;
+	int tile_size = 16 * scale;
 
-	int tile_size = SCREEN_WIDTH / map->resolution.x;
+	Map* map = read_map("map1.txt", tile_size);
+
+	Vector2 margin = {(GetRenderWidth() - map->resolution.x * tile_size)/2, (GetRenderHeight() - map->resolution.y * tile_size)/2};
+
+	printf("\n%d - %.2f * %d = %.2f\n", GetRenderHeight(), map->resolution.y, tile_size, (GetRenderHeight() - map->resolution.y * tile_size)/2);
 
 	Player *player = makePlayer(map->spawn_pos.x, map->spawn_pos.y, tile_size);
 
 	RenderTexture2D map_texture = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
+	Texture2D ladder_texture = LoadTexture("ladder.png");
+	Texture2D platform_texture = LoadTexture("tube.png");
 
 	BeginTextureMode(map_texture);
 
@@ -45,35 +54,36 @@ int main ()
 					for (int x = 0; x < map->resolution.x; x++){
 
 						char tile = map->tiles[y][x];
+						Vector2 position = tileToPosition((Vector2){x,y}, margin, tile_size);
 
 						switch (tile)
 						{
 						case 'z':
-							DrawRectangle(x * tile_size, y * (SCREEN_HEIGHT / map->resolution.y), tile_size, (SCREEN_HEIGHT / map->resolution.y), BLUE);
+							DrawTextureEx(platform_texture, position, 0, scale, WHITE);
 							break;
 
 						case 'e':
-							DrawRectangle(x * tile_size, y * (SCREEN_HEIGHT / map->resolution.y), tile_size, (SCREEN_HEIGHT / map->resolution.y), RED);
+							DrawRectangle(position.x, position.y, tile_size, tile_size, RED);
 							break;
 
 						case 's':
-							DrawRectangle(x * tile_size, y * (SCREEN_HEIGHT / map->resolution.y), tile_size, (SCREEN_HEIGHT / map->resolution.y), ORANGE);
+							DrawTextureEx(ladder_texture, position, 0, scale, WHITE);
 							break;
 
 						case 'h':
-							DrawRectangle(x * tile_size, y * (SCREEN_HEIGHT / map->resolution.y), tile_size, (SCREEN_HEIGHT / map->resolution.y), YELLOW);
+							DrawTextureEx(ladder_texture, position, 0, scale, WHITE);
 							break;
 						
 						case 'd':
-							DrawRectangle(x * tile_size, y * (SCREEN_HEIGHT / map->resolution.y), tile_size, (SCREEN_HEIGHT / map->resolution.y), ORANGE);
+							DrawTextureEx(ladder_texture, position, 0, scale, WHITE);
 							break;
 
 						case 'f':
-							DrawRectangle(x * tile_size, y * (SCREEN_HEIGHT / map->resolution.y), tile_size, (SCREEN_HEIGHT / map->resolution.y), BROWN);
+							DrawRectangle(position.x, position.y, tile_size, tile_size, BROWN);
 							break;
 						
 						case 'p':
-							DrawRectangle(x * tile_size, y * (SCREEN_HEIGHT / map->resolution.y), tile_size, (SCREEN_HEIGHT / map->resolution.y), PINK);
+							DrawRectangle(position.x, position.y, tile_size, tile_size, PINK);
 							break;
 
 						default:
@@ -98,10 +108,14 @@ int main ()
 		ClearBackground(BLACK);
 
 		switch (current_screen) {
+
+
 			case TITLE:
 				handleScreenSelection(&current_screen);
 				drawMenu();
 				break;
+
+			
 			case GAMEPLAY:
 				if (IsKeyPressed(KEY_SPACE)) {
 					pause = !pause;
@@ -112,7 +126,7 @@ int main ()
 					
 					handlePlayerMovement(player, map, delta_time);
 
-					drawPlayer(*player);				
+					drawPlayer(*player);
 
 				} else {
 					char pause_msg[] = "GAME PAUSED";
@@ -120,16 +134,21 @@ int main ()
 					DrawText(pause_msg, (SCREEN_WIDTH - pause_msg_size) / 2.0, (SCREEN_HEIGHT)/2.0 - 100, TAM_FONT_BIG, MAROON);
 				}
 				break;
+
+
 			case QUIT:
 				quit = 1;
 				break;
 		}
 	
-		// end the frame and get ready for the next one  (display frame, poll input, etc...)
 		EndDrawing();
 	}
 
-	// destroy the window and cleanup the OpenGL context
 	CloseWindow();
+
+	free(player);
+	free_map(map);
+	
+
 	return 0;
 }
