@@ -4,8 +4,7 @@
 #define GAME_H
 
 typedef struct player {
-	float x;
-	float y;
+	Vector2 pos;
 	float size;
 	Vector2 velocity;
 	int can_climb;
@@ -13,16 +12,33 @@ typedef struct player {
 } Player;
 
 typedef struct map {
-	int collisions_quantity;
-	Rectangle* collisions;
-	int ladders_quantity;
-	Rectangle* ladders;
     char** tiles;
     Vector2 resolution;
+
     Vector2 spawn_pos;
-    Vector2 porta_pos;
+	Vector2 porta_pos;
+
+	int enemies_quantity;
+	Vector2* enemies_pos;
+
+	RenderTexture2D render_texture;
+
+	int collisions_quantity;
+	Rectangle* collisions;
+
+	int ladders_quantity;
+	Rectangle* ladders;
 
 } Map;
+
+typedef struct enemy
+{
+	Vector2 pos;
+	float size;
+	Vector2 velocity;
+	Rectangle hitbox;
+} Enemy;
+
 
 enum {
 	TITLE = 0,
@@ -32,17 +48,20 @@ enum {
 	QUIT
 };
 
-Player *makePlayer(float x, float y, float size);
-Map *read_map(char* map_path, int tile_size);
+Player* makePlayer(Vector2 pos, float tile_size, int scale);
+Enemy** makeEnemies(Vector2* pos, int quantity, float tile_size, int scale);
+Map* read_map(char* map_path, int tile_size, int scale);
+void createMapTexture(Map* map, Vector2 margin, int tile_size, int scale);
 
 void drawMenu();
 void handleScreenSelection(int *current_screen);
 
-void drawPlayer(Player p);
+void drawEntity(Rectangle entity_hitbox);
 bool checkOverlap(Rectangle player, Rectangle target);
 bool checkRayCollision(Vector2 origin, Vector2 ray_dir, Rectangle target, Vector2* collision_point, Vector2* collision_normal, float* t_near_hit);
 bool checkRecCollision(Player* player, Rectangle* target, Vector2* collision_point, Vector2* collision_normal, float* contact_time, float delta_time);
-void handlePlayerMovement(Player *p, Map *map, float delta_time);
+void handlePlayerMovement(Player* p, Map* map, float delta_time);
+void handleEnemyMovement(Enemy* enemy, float delta_time);
 
 
 #endif
