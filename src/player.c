@@ -44,7 +44,7 @@ void handlePlayerMovement(Player* player, Map* map, float delta_time)
 
 	for (int i = 0; i < map->collisions_quantity; i++){
 
-		if (checkRecCollision(player, &map->collisions[i], &collision_point, &collision_normal, &contact_time, delta_time)){
+		if (checkPlayerCollision(player, &map->collisions[i], &collision_point, &collision_normal, &contact_time, delta_time)){
 
 			// counter velocity on each axis
 			player->velocity.x += collision_normal.x * fabs(player->velocity.x) * (1-contact_time);
@@ -60,6 +60,7 @@ void handlePlayerMovement(Player* player, Map* map, float delta_time)
 	for (int i = 0; i < map->ladders_quantity; i++){
 
 		if(checkOverlap(player->hitbox, map->ladders[i])){
+			printf("can climb!\n");
 			player->can_climb = 1;
 			if(player->pos.y < (map->ladders[i].y - player->hitbox.height)){
 			player->velocity.y = fabs(player->velocity.y);

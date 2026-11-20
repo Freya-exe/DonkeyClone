@@ -11,7 +11,7 @@
   d        s        s        d
 zzhzzzzzzzzz        zzzzzzzzzh
   h                          h
-  s     d              d     s
+  s     d              d p   s
   zzzzzzhzzzzzzzzzzzzzzhzzzzzz
         h              h      
         s     d        s e    
@@ -23,7 +23,7 @@ zzhzzzzzzzzz        zzzzzzzzzh
  d    es             s      d 
  hzzzzzzzzzzzzzzzzzzzzzzzzzzh 
  h                          h 
- s   p    z                 s 
+ s        z                 s 
 zzzzzzzzzzzzz   zzzzzzzzzzzzzz
                               
                               

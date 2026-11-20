@@ -38,12 +38,6 @@ typedef struct map {
 	Rectangle* ladders;
 } Map;
 
-typedef struct enemy {
-	Vector2 pos;
-	Vector2 size;
-	double velocity;
-} Enemy;
-
 typedef struct ranking_item {
 	char name[20];
 	double time;
@@ -61,9 +55,11 @@ typedef struct input_box {
 typedef struct enemy
 {
 	Vector2 pos;
+	Vector2 spawn_pos;
 	float size;
 	Vector2 velocity;
 	Rectangle hitbox;
+
 } Enemy;
 
 
@@ -86,13 +82,10 @@ void handleScreenSelection(int *current_screen);
 void drawEntity(Rectangle entity_hitbox);
 bool checkOverlap(Rectangle player, Rectangle target);
 bool checkRayCollision(Vector2 origin, Vector2 ray_dir, Rectangle target, Vector2* collision_point, Vector2* collision_normal, float* t_near_hit);
-bool checkRecCollision(Player* player, Rectangle* target, Vector2* collision_point, Vector2* collision_normal, float* contact_time, float delta_time);
+bool checkPlayerCollision(Player* player, Rectangle* target, Vector2* collision_point, Vector2* collision_normal, float* contact_time, float delta_time);
+bool checkEnemyCollision(Enemy* enemy, Rectangle* target, Vector2* collision_point, Vector2* collision_normal, float* contact_time, float delta_time);
 void handlePlayerMovement(Player* p, Map* map, float delta_time);
-void handleEnemyMovement(Enemy* enemy, float delta_time);
-
-Enemy *makeEnemy(Vector2 pos, Vector2 size, double velocity);
-void walkEnemy(Enemy *e);
-void drawEnemy(Enemy *e);
+void handleEnemyMovement(Enemy* enemy, Map* map, float delta_time);
 
 void drawEndingScreen();
 void handleEndingSelection(int *current_screen);

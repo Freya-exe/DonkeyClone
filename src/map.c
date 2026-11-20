@@ -98,7 +98,6 @@ Map *read_map(char* map_path, int tile_size, int scale){
     Vector2* ladders_positions = (Vector2*)malloc(max_rects * sizeof(Vector2));
     Vector2* ladders_sizes = (Vector2*)malloc(max_rects * sizeof(Vector2));
 
-
     for (int y = 0; y < map->resolution.y; y++){
         for (int x = 0; x < map->resolution.x; x++){
 
@@ -127,19 +126,29 @@ Map *read_map(char* map_path, int tile_size, int scale){
 
             if (is_ladder) ladder_size++;
 
-            if (ladder_size != 0 && (y == map->resolution.y - 1 && is_ladder || (x < map->resolution.y - 1 && (map->tiles[y+1][x] != 's' && map->tiles[y+1][x] != 'h' && map->tiles[y+1][x] != 'd')))){
+            if (ladder_count == 15 && (map->tiles[y][x] == 's' || map->tiles[y][x] == 'h' || map->tiles[y][x] == 'd'))
+                {
+                    printf("y = %d || size = %d\n", y, ladder_size);
+                }
+
+
+            if (ladder_size != 0 && ((y == map->resolution.y - 1 && is_ladder) || (y < map->resolution.y - 1 && (map->tiles[y+1][x] != 's' && map->tiles[y+1][x] != 'h' && map->tiles[y+1][x] != 'd')))){
 
                 ladders_positions[ladder_count].x = x;
                 ladders_positions[ladder_count].y = (y - ladder_size + 1);
                 ladders_sizes[ladder_count].x = 1;
                 ladders_sizes[ladder_count].y = ladder_size;
 
+
                 ladder_count++;
+
                 ladder_size = 0;
 
             }
         }
     }
+
+    printf("ladder count: %d\n", ladder_count);
 
     map->collisions_quantity = collision_count;
 

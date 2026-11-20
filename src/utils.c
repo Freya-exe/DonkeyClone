@@ -81,14 +81,13 @@ bool checkRayCollision(Vector2 origin, Vector2 ray_dir, Rectangle target, Vector
 
 }
 
-bool checkRecCollision(Player* player, Rectangle* target, Vector2* collision_point, Vector2* collision_normal, float* contact_time, float delta_time){
+bool checkPlayerCollision(Player* player, Rectangle* target, Vector2* collision_point, Vector2* collision_normal, float* contact_time, float delta_time){
 
 	if (player->velocity.x == 0 && player->velocity.y == 0)
 	{
 		return false;
 	}
 	
-
 	Rectangle expanded_target;
 	expanded_target.x = target->x - player->hitbox.width/2;
 	expanded_target.y = target->y - player->hitbox.height/2;
@@ -101,11 +100,33 @@ bool checkRecCollision(Player* player, Rectangle* target, Vector2* collision_poi
 	if (checkRayCollision(origin, dir, expanded_target, collision_point, collision_normal, contact_time)){
 		// contact in range of collision
 		if(*contact_time < 1 && *contact_time >= 0){
-			printf("collision point: { %.2f, %.2f }\n", collision_point->x, collision_point->y);
-			printf("player y = %.2f | player height = %.2f\n", player->hitbox.y, player->hitbox.height);
-			printf("Target y = %.2f | target height = %.2f\n", target->y, target->height);
-			printf("ExTarget y = %.2f | ExTarget height = %.2f\n", expanded_target.y, expanded_target.height);
-			
+			return true;
+		} 	
+	}
+
+	return false;
+
+}
+
+bool checkEnemyCollision(Enemy* enemy, Rectangle* target, Vector2* collision_point, Vector2* collision_normal, float* contact_time, float delta_time){
+
+	if (enemy->velocity.x == 0 && enemy->velocity.y == 0)
+	{
+		return false;
+	}
+
+	Rectangle expanded_target;
+	expanded_target.x = target->x - enemy->hitbox.width/2;
+	expanded_target.y = target->y - enemy->hitbox.height/2;
+	expanded_target.width = target->width + enemy->hitbox.width;
+	expanded_target.height = target->height + enemy->hitbox.height;
+
+	Vector2 origin = {enemy->pos.x + enemy->hitbox.width/2, enemy->pos.y + enemy->hitbox.height/2};
+	Vector2 dir = {origin.x + enemy->velocity.x * delta_time, origin.y + enemy->velocity.y * delta_time};
+	
+	if (checkRayCollision(origin, dir, expanded_target, collision_point, collision_normal, contact_time)){
+		// contact in range of collision
+		if(*contact_time < 1 && *contact_time >= 0){
 			return true;
 		} 	
 	}

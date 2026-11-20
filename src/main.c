@@ -6,7 +6,6 @@
 #include "utils.h"
 #include <string.h>
 
-#define ENEMIES 2
 #define TAM_RANKING 10
 
 int main()
@@ -16,13 +15,7 @@ int main()
 
 	double current_time = 0;	
 
-	Vector2 playerSpawn = {SCREEN_WIDTH/2.0, SCREEN_HEIGHT/2.0};
-
 	InputBox *inputBox = makeInputBox(150, 150, 500, 60, 20);
- 
-	Vector2 map_res;
-
-	// Tell the window to use vsync and work on high DPI displays
 
 	// Create the window and OpenGL context
 	InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Donkey Kong");
@@ -78,6 +71,7 @@ int main()
 		ClearBackground(BLACK);
 		switch (current_screen) {
 			case TITLE:
+
 				//reset variables
 				pause = 0;
 				updated_ranking = 0;
@@ -85,16 +79,18 @@ int main()
 				strcpy(inputBox->text, "");
 				inputBox->letterCount = 0;
 				// reset positions 
-				player->x = playerSpawn.x;
-				player->y = playerSpawn.y;
-				for (int i = 0; i < ENEMIES; i++) {
-					enemies[i]->pos.x = enemiesSpawn[i].x;
-					enemies[i]->pos.y = enemiesSpawn[i].y;
+
+				player->pos = map->spawn_pos;
+				for (int i = 0; i < map->enemies_quantity; i++) {
+					enemies[i]->pos = enemies[i]->spawn_pos;
 				}
+
 				// handle menu
 				handleScreenSelection(&current_screen);
 				drawMenu();
+
 				break;
+
 			case GAMEPLAY:
 				//reset variables
 				updated_ranking = 0;
@@ -115,25 +111,20 @@ int main()
 
 					for (int i = 0; i < map->enemies_quantity; i++)
 					{
-						handleEnemyMovement(enemies[i], delta_time);
+						handleEnemyMovement(enemies[i], map, delta_time);
 						drawEntity(enemies[i]->hitbox);
-					}
-					
 
-					for (int i = 0; i < ENEMIES; i++) {
-						drawEnemy(enemies[i]);
-						walkEnemy(enemies[i]);
-						Rectangle _playerRect = {player->x, player->y, player->hitbox.width, player->hitbox.height};
-						Rectangle enemyRect = {enemies[i]->pos.x, enemies[i]->pos.y, enemies[i]->size.x, enemies[i]->size.y};
-						if (CheckCollisionRecs(_playerRect, enemyRect)) {
+							if (CheckCollisionRecs(player->hitbox, enemies[i]->hitbox)) {
 							current_screen = ENDING;
 							inputBox->done = 0;
 							strcpy(inputBox->text, "");
 							inputBox->letterCount = 0;
 						}
+
 					}
 					
 				} else {
+
 					char pause_msg[] = "JOGO PAUSADO";
 					double pause_msg_size = MeasureText(pause_msg, TAM_FONT_BIG);
 					DrawText(pause_msg, (SCREEN_WIDTH - pause_msg_size) / 2.0, (SCREEN_HEIGHT)/2.0 - 100, TAM_FONT_BIG, MAROON);
@@ -141,19 +132,21 @@ int main()
 					if (IsKeyPressed(KEY_ONE)) pause = 0;
 					if (IsKeyPressed(KEY_TWO)) current_screen = TITLE;
 					if (IsKeyPressed(KEY_THREE)) current_screen = QUIT;
+
 				}
+
 				break;
+
 			case ENDING:
 				// count time to finish the game
 				double end_time = GetTime();
 				double time_interval = end_time - current_time;
 				
 				// reset positions
-				player->x = playerSpawn.x;
-				player->y = playerSpawn.y;
-				for (int i = 0; i < ENEMIES; i++) {
-					enemies[i]->pos.x = enemiesSpawn[i].x;
-					enemies[i]->pos.y = enemiesSpawn[i].y;
+				player->pos = map->spawn_pos;
+
+				for (int i = 0; i < map->enemies_quantity; i++) {
+					enemies[i]->pos = enemies[i]->spawn_pos;
 				}
 
 				// handle input box
@@ -203,11 +196,17 @@ int main()
 		}
 		EndDrawing();
 	}
+	
 	writeRanking(ranking, TAM_RANKING);
+
 	free(player);
-	for (int i = 0; i < ENEMIES; i++) {
+
+	for (int i = 0; i < map->enemies_quantity; i++) {
 		free(enemies[i]);
 	}
+
+	free(enemies);
+
 	free(inputBox->text);
 	free(inputBox);
 	free_map(map);
