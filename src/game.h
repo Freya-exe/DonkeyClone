@@ -24,7 +24,7 @@ typedef struct map {
     Vector2 resolution;
 
     Vector2 spawn_pos;
-	Vector2 porta_pos;
+	Vector2 door_pos;
 
 	int enemies_quantity;
 	Vector2* enemies_pos;
