@@ -5,7 +5,10 @@
 #include <stdlib.h>
 #include "resource_dir.h"
 
-Map *read_map(char* map_path, int tile_size){
+#define SCREEN_WIDTH 1920
+#define SCREEN_HEIGHT 1080
+
+Map *read_map(char* map_path, int tile_size, int scale){
 
     Map* map = malloc(sizeof(Map));
 
@@ -49,9 +52,11 @@ Map *read_map(char* map_path, int tile_size){
 
     fptr = fopen(map_path, "r");
 
-    Vector2 margin = {(GetRenderWidth() - map->resolution.x * tile_size)/2, (GetRenderHeight() - map->resolution.y * tile_size)/2};
-
-    //(SCREEN_HEIGHT - map->resolution.y * tile_size)/2
+    Vector2 margin = {(GetRenderWidth() - map->resolution.x * tile_size * scale)/2, (GetRenderHeight() - map->resolution.y * tile_size * scale)/2};
+    
+    map->enemies_quantity = 0;
+    int max_enemy_count = map->resolution.x * map->resolution.y;
+    map->enemies_pos = (Vector2*)malloc(max_enemy_count * sizeof(Vector2));
 
     for (int y = 0; y < map->resolution.y; y++){
         for (int x = 0; x < map->resolution.x; x++){
@@ -63,17 +68,21 @@ Map *read_map(char* map_path, int tile_size){
                 character = fgetc(fptr);
             }
             
-            if (character == 'p') map->spawn_pos = tileToPosition((Vector2){ x, y }, margin, tile_size);
+            if (character == 'p') map->spawn_pos = tileToPosition((Vector2){ x, y }, margin, tile_size * scale);
 
-            if (character == 'f') map->porta_pos = tileToPosition((Vector2){ x, y }, margin, tile_size);
+            if (character == 'f') map->porta_pos = tileToPosition((Vector2){ x, y }, margin, tile_size * scale);
+
+            if (character == 'e') {
+                map->enemies_pos[map->enemies_quantity] = tileToPosition((Vector2){ x, y }, margin, tile_size * scale);
+                map->enemies_quantity++;
+            }
 
             map->tiles[y][x] = character;
 
         }
-    }     
+    }
 
     fclose(fptr);
-
     
     int collision_size = 0;
     int collision_count = 0;
@@ -82,13 +91,13 @@ Map *read_map(char* map_path, int tile_size){
     int ladder_count = 0;
 
     const int max_rects = ((int)(map->resolution.x * map->resolution.y) % 2) ? (map->resolution.x * map->resolution.y) / 2 + 1 : (map->resolution.x * map->resolution.y) / 2;
-
     
     Vector2* collisions_positions = (Vector2*)malloc(max_rects * sizeof(Vector2));
     Vector2* collisions_sizes = (Vector2*)malloc(max_rects * sizeof(Vector2));
 
     Vector2* ladders_positions = (Vector2*)malloc(max_rects * sizeof(Vector2));
     Vector2* ladders_sizes = (Vector2*)malloc(max_rects * sizeof(Vector2));
+
 
     for (int y = 0; y < map->resolution.y; y++){
         for (int x = 0; x < map->resolution.x; x++){
@@ -138,14 +147,13 @@ Map *read_map(char* map_path, int tile_size){
 
     for (int i = 0; i < map->collisions_quantity; i++){
 
-        Vector2 position = tileToPosition(collisions_positions[i], margin, tile_size);
+        Vector2 position = tileToPosition(collisions_positions[i], margin, tile_size * scale);
 
         map->collisions[i] = (Rectangle){
-
             (float)position.x,
             (float)position.y,
-            (float)collisions_sizes[i].x * tile_size,
-            (float)collisions_sizes[i].y * tile_size
+            (float)collisions_sizes[i].x * tile_size * scale,
+            (float)collisions_sizes[i].y * tile_size * scale
         };
             
     }
@@ -156,13 +164,13 @@ Map *read_map(char* map_path, int tile_size){
 
     for (int i = 0; i < map->ladders_quantity; i++){
 
-        Vector2 position = tileToPosition(ladders_positions[i], margin, tile_size);
+        Vector2 position = tileToPosition(ladders_positions[i], margin, tile_size * scale);
 
         map->ladders[i] = (Rectangle){
             (float)position.x,
             (float)position.y,
-            (float)ladders_sizes[i].x * tile_size,
-            (float)ladders_sizes[i].y * tile_size
+            (float)ladders_sizes[i].x * tile_size * scale,
+            (float)ladders_sizes[i].y * tile_size * scale
         };
 
     }
@@ -170,5 +178,70 @@ Map *read_map(char* map_path, int tile_size){
     free(collisions_positions);
     free(collisions_sizes);
 
+    map->render_texture = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    createMapTexture(map, margin, tile_size, scale);
+
     return map;
+}
+
+void createMapTexture(Map* map, Vector2 margin, int tile_size, int scale){
+
+    Texture2D tileset = LoadTexture("tileset.png");
+
+    BeginTextureMode(map->render_texture);
+
+    ClearBackground(BLACK);
+
+    for (int y = 0; y < map->resolution.y; y++){
+        for (int x = 0; x < map->resolution.x; x++){
+
+            char tile = map->tiles[y][x];
+            Vector2 position = tileToPosition((Vector2){x,y}, margin, tile_size * scale);
+            Rectangle source_rect = {16, 0, 16, 16};
+            Rectangle dest_rect = {position.x, position.y, tile_size * scale, tile_size * scale};
+            Vector2 origin = {0,0};
+
+            switch (tile){
+                case 'z':
+                    source_rect.x = 16;
+                    DrawTexturePro(tileset, source_rect, dest_rect, origin, 0, WHITE);
+                    break;
+
+                case 'e':
+                    DrawRectangle(position.x, position.y, tile_size * scale, tile_size * scale, RED);
+                    break;
+
+                case 's':
+                    source_rect.x = 0;
+                    DrawTexturePro(tileset, source_rect, dest_rect, origin, 0, WHITE);
+                    break;
+
+                case 'h':
+                    source_rect.x = 0;
+                    DrawTexturePro(tileset, source_rect, dest_rect, origin, 0, WHITE);
+                    break;
+                
+                case 'd':
+                    source_rect.x = 0;
+                    DrawTexturePro(tileset, source_rect, dest_rect, origin, 0, WHITE);
+                    break;
+
+                case 'f':
+                    DrawRectangle(position.x, position.y, tile_size * scale, tile_size * scale, BROWN);
+                    break;
+                
+                case 'p':
+                    DrawRectangle(position.x, position.y, tile_size * scale, tile_size * scale, PINK);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    }
+
+    EndTextureMode();
+
+
 }
