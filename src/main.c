@@ -114,26 +114,26 @@ int main()
 						handleEnemyMovement(enemies[i], map, delta_time);
 						drawEntity(enemies[i]->hitbox);
 
-							if (CheckCollisionRecs(player->hitbox, enemies[i]->hitbox)) {
+							if (checkOverlap(player->hitbox, enemies[i]->hitbox)) {
 							current_screen = ENDING;
 							inputBox->done = 0;
 							strcpy(inputBox->text, "");
 							inputBox->letterCount = 0;
+
 						}
 
 					}
 
-					if (map->porta_pos.x + tile_size * scale >= player->pos.x
-						&& map->porta_pos.x <= player->pos.x
-						&& map->porta_pos.y + tile_size * scale >= player->pos.y
-						&& map->porta_pos.y <= player->pos.y) {
-						
-						TraceLog(LOG_INFO, "Chegou na porta! x:%.2f, y%.2f\n", map->porta_pos.x, map->porta_pos.y);
+					if (checkOverlap(player->hitbox, (Rectangle){map->door_pos.x, map->door_pos.y, tile_size*scale, tile_size*scale}))
+					{
+						TraceLog(LOG_INFO, "Chegou na porta! x: %.2f, y: %.2f\n", map->door_pos.x, map->door_pos.y);
 						// mudar mapa, map->porta deve ter uma nova localizacao baseada no proximo mapa
 						// player e inimigos devem ir para suas posicoes iniciais do novo mapa...
-						
-						
+						map = read_map("map2.txt", tile_size, scale);
+						player = makePlayer(map->spawn_pos, tile_size, scale);
+						enemies = makeEnemies(map->enemies_pos, map->enemies_quantity, tile_size, scale);
 					}
+					
 					
 				} else {
 

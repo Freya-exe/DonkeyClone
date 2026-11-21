@@ -70,7 +70,7 @@ Map *read_map(char* map_path, int tile_size, int scale){
             
             if (character == 'p') map->spawn_pos = tileToPosition((Vector2){ x, y }, margin, tile_size * scale);
 
-            if (character == 'f') map->porta_pos = tileToPosition((Vector2){ x, y }, margin, tile_size * scale);
+            if (character == 'f') map->door_pos = tileToPosition((Vector2){ x, y }, margin, tile_size * scale);
 
             if (character == 'e') {
                 map->enemies_pos[map->enemies_quantity] = tileToPosition((Vector2){ x, y }, margin, tile_size * scale);
