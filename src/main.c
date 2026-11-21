@@ -7,11 +7,17 @@
 #include <string.h>
 
 #define TAM_RANKING 10
+#define TAM_STRING_MAPA 10
 
 int main()
 {
 
 	SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
+
+	char mapa_novo[TAM_STRING_MAPA], mapa_atual[TAM_STRING_MAPA];
+
+	strcpy(mapa_atual, "map1.txt");
+	strcpy(mapa_novo, "mapX.txt");
 
 	double current_time = 0;	
 
@@ -28,13 +34,14 @@ int main()
 	SetTargetFPS(TARGET_FPS);
 
 	int current_screen = TITLE;
+	int winner = 0;
 	int quit = 0;
 	int pause = 0;
 
 	int scale = 2;
 	int tile_size = 16;
 
-	Map* map = read_map("map1.txt", tile_size, scale);
+	Map* map = read_map(mapa_atual, tile_size, scale);
 	Player* player = makePlayer(map->spawn_pos, tile_size, scale);
 	Enemy** enemies = makeEnemies(map->enemies_pos, map->enemies_quantity, tile_size, scale);
 
@@ -74,6 +81,7 @@ int main()
 
 				//reset variables
 				pause = 0;
+				winner = 0;
 				updated_ranking = 0;
 				inputBox->done = 0;
 				strcpy(inputBox->text, "");
@@ -94,6 +102,7 @@ int main()
 			case GAMEPLAY:
 				//reset variables
 				updated_ranking = 0;
+				winner = 0;
 				inputBox->done = 0;
 				strcpy(inputBox->text, "");
 				inputBox->letterCount = 0;
@@ -116,6 +125,7 @@ int main()
 
 							if (checkOverlap(player->hitbox, enemies[i]->hitbox)) {
 							current_screen = ENDING;
+							winner = 0;
 							inputBox->done = 0;
 							strcpy(inputBox->text, "");
 							inputBox->letterCount = 0;
@@ -124,14 +134,48 @@ int main()
 
 					}
 
+					// mudar mapa, map->porta deve ter uma nova localizacao baseada no proximo mapa
+					// player e inimigos devem ir para suas posicoes iniciais do novo mapa...
 					if (checkOverlap(player->hitbox, (Rectangle){map->door_pos.x, map->door_pos.y, tile_size*scale, tile_size*scale}))
 					{
 						TraceLog(LOG_INFO, "Chegou na porta! x: %.2f, y: %.2f\n", map->door_pos.x, map->door_pos.y);
-						// mudar mapa, map->porta deve ter uma nova localizacao baseada no proximo mapa
-						// player e inimigos devem ir para suas posicoes iniciais do novo mapa...
-						map = read_map("map2.txt", tile_size, scale);
-						player = makePlayer(map->spawn_pos, tile_size, scale);
-						enemies = makeEnemies(map->enemies_pos, map->enemies_quantity, tile_size, scale);
+
+						// decidir qual vai ser o proximo mapa, se tiver proximo
+						if (mapa_atual[3] == '9') {
+							strcpy(mapa_novo, "fim");
+						} else {
+							mapa_novo[3] = mapa_atual[3] + 1;
+						}
+
+						TraceLog(LOG_INFO, "mapa antigo[3]: %c\n mapa antigo[3] - '0': %d\n", mapa_atual[3], mapa_atual[3] - '0');
+						TraceLog(LOG_INFO, "mapa antigo: %s\n mapa novo: %s\n", mapa_atual, mapa_novo);
+
+						// verifica a existencia do mapa antes de ler
+						int pode_ler = 1;
+
+						char caminho[30] = "../resources/";
+						strcat(caminho, mapa_novo);
+						FILE *fp = fopen(caminho, "r");
+
+						TraceLog(LOG_INFO, "caminho: %s\n", caminho);
+						if (fp == NULL) {
+							pode_ler = 0;
+							TraceLog(LOG_INFO, "mapa nao existe. fim de jogo.\n");
+						} else {
+							fclose(fp);
+						}
+
+						// ler o mapa se existe
+						if (pode_ler) {
+							map = read_map(mapa_novo, tile_size, scale);
+							strcpy(mapa_atual, mapa_novo);
+
+							player = makePlayer(map->spawn_pos, tile_size, scale);
+							enemies = makeEnemies(map->enemies_pos, map->enemies_quantity, tile_size, scale);
+						} else {
+							winner = 1;
+							current_screen = ENDING;
+						}
 					}
 					
 					
@@ -161,33 +205,42 @@ int main()
 					enemies[i]->pos = enemies[i]->spawn_pos;
 				}
 
-				// handle input box
-				if (inputBox->done == 0 && (time_interval < ranking[TAM_RANKING - 1].time || empty_ranking_slots > 0)) {
-					DrawText("Novo recorde! Digite o seu nome:", 20, 20, TAM_FONT, MAROON);
-					checkInput(inputBox);
-					drawInputBox(inputBox);
-					DrawText("Aperte [ENTER] para enviar o seu nome", 20, 400, TAM_FONT, MAROON);
-				}
+				if (winner) {
+					// handle input box
+					if (inputBox->done == 0 && (time_interval < ranking[TAM_RANKING - 1].time || empty_ranking_slots > 0)) {
+						DrawText("Novo recorde! Digite o seu nome:", 20, 20, TAM_FONT, MAROON);
+						checkInput(inputBox);
+						drawInputBox(inputBox);
+						DrawText("Aperte [ENTER] para enviar o seu nome", 20, 400, TAM_FONT, MAROON);
+					}
 
-				if (inputBox->done == 1) {
-					sortRanking(ranking, TAM_RANKING);
+					if (inputBox->done == 1) {
+						sortRanking(ranking, TAM_RANKING);
+
+						int to_update = -1;
+						for (int i = 0; i < TAM_RANKING; i++) {
+							if (strcmp(ranking[i].name, "[VAZIO]") == 0 && updated_ranking == 0) {
+								to_update = i;
+								updated_ranking = 1;
+								empty_ranking_slots--;
+							}
+						}
+						if (updated_ranking == 0) {
+							to_update = TAM_RANKING - 1;
+							updated_ranking = 1;
+						}
+						if (updated_ranking == 1 && to_update >= 0) {
+							updateRanking(ranking, TAM_RANKING, to_update, inputBox->text, time_interval);
+						}
+
+					}
+
+					if (inputBox->done == 1 || empty_ranking_slots <= 0 || time_interval >= ranking[TAM_RANKING - 1].time) {
+						current_screen = TITLE;
+					}
+				} else {
 					drawEndingScreen();
 					handleEndingSelection(&current_screen);
-					int to_update = -1;
-					for (int i = 0; i < TAM_RANKING; i++) {
-						if (strcmp(ranking[i].name, "[VAZIO]") == 0 && updated_ranking == 0) {
-							to_update = i;
-							updated_ranking = 1;
-							empty_ranking_slots--;
-						}
-					}
-					if (updated_ranking == 0) {
-						to_update = TAM_RANKING - 1;
-						updated_ranking = 1;
-					}
-					if (updated_ranking == 1 && to_update >= 0) {
-						updateRanking(ranking, TAM_RANKING, to_update, inputBox->text, time_interval);
-					}
 				}
 
 				break;
