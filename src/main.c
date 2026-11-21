@@ -122,6 +122,18 @@ int main()
 						}
 
 					}
+
+					if (map->porta_pos.x + tile_size * scale >= player->pos.x
+						&& map->porta_pos.x <= player->pos.x
+						&& map->porta_pos.y + tile_size * scale >= player->pos.y
+						&& map->porta_pos.y <= player->pos.y) {
+						
+						TraceLog(LOG_INFO, "Chegou na porta! x:%.2f, y%.2f\n", map->porta_pos.x, map->porta_pos.y);
+						// mudar mapa, map->porta deve ter uma nova localizacao baseada no proximo mapa
+						// player e inimigos devem ir para suas posicoes iniciais do novo mapa...
+						
+						
+					}
 					
 				} else {
 
