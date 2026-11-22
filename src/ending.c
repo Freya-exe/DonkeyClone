@@ -17,3 +17,10 @@ void handleEndingSelection(int *current_screen)
 	if (IsKeyPressed(KEY_TWO)) *current_screen = TITLE;
 	if (IsKeyPressed(KEY_THREE)) *current_screen = QUIT;
 }
+
+void handleEndingSounds(Sound *sounds)
+{
+	if (IsKeyPressed(KEY_ONE)) PlaySound(sounds[1]);
+	if (IsKeyPressed(KEY_TWO)) PlaySound(sounds[1]);
+	if (IsKeyPressed(KEY_THREE)) PlaySound(sounds[1]);
+}

@@ -11,6 +11,15 @@
 #define TAM_FONT 30
 #define TAM_FONT_BIG 60
 
+#define TAM_RANKING 10
+#define TAM_STRING_MAPA 10
+
+#define MAX_SOUNDS 20
+#define AUDIO_PATH "resources/audio/sound/"
+
+#define MAX_MUSIC 10
+#define MUSIC_PATH "resources/audio/music/"
+
 typedef struct player {
 	Vector2 pos;
 	float size;
@@ -62,7 +71,6 @@ typedef struct enemy
 
 } Enemy;
 
-
 enum {
 	TITLE = 0,
 	GAMEPLAY,
@@ -99,5 +107,12 @@ void readRanking(RankingItem *r, int n);
 InputBox *makeInputBox(double x, double y, double width, double height, int maxText);
 void checkInput(InputBox *inputBox);
 void drawInputBox(InputBox *inputBox);
+
+void loadSounds(Sound *sounds);
+void handleTitleSounds(Sound *sounds);
+void handleEndingSounds(Sound *sounds);
+
+void loadMusic(Music *music);
+void handleTitleMusic(Music music);
 
 #endif

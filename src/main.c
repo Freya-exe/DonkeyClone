@@ -5,9 +5,9 @@
 #include "game.h"
 #include "utils.h"
 #include <string.h>
+#include <time.h>
 
-#define TAM_RANKING 10
-#define TAM_STRING_MAPA 10
+#define N_MUSIC 4
 
 int main()
 {
@@ -27,6 +27,16 @@ int main()
 	InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Donkey Kong");
 
 	TraceLog(LOG_INFO, "%s", "INITIALIZED WINDOW");
+
+	InitAudioDevice();
+
+	Sound sounds[MAX_SOUNDS] = {0};
+	loadSounds(sounds);
+
+	Music music[MAX_MUSIC] = {0};
+	loadMusic(music);
+
+	Music current_music;
 
 	// Utility function from resource_dir.h to find the resources folder and set it as the current working directory so we can load from it
 	SearchAndSetResourceDir("resources");
@@ -72,6 +82,10 @@ int main()
 		}
 	}
 
+	srand(time(NULL));
+	
+	int rand_music_num = 1 + (rand() % (N_MUSIC - 1));
+
 	while (!quit && !WindowShouldClose()) {
 		float delta_time = GetFrameTime();
 		BeginDrawing();
@@ -87,15 +101,27 @@ int main()
 				inputBox->done = 0;
 				strcpy(inputBox->text, "");
 				inputBox->letterCount = 0;
-				// reset positions 
+				strcpy(mapa_atual, "map1.txt");
+				strcpy(mapa_novo, "mapX.txt");
+				if (IsKeyPressed(KEY_ONE)) {
+					free_map(map);
+					map = read_map(mapa_atual, tile_size, scale);
+				}
 
+				// reset positions 
 				player->pos = map->spawn_pos;
 				for (int i = 0; i < map->enemies_quantity; i++) {
 					enemies[i]->pos = enemies[i]->spawn_pos;
 				}
 
+				// music
+				handleTitleMusic(music[0]);
+				current_music = music[0];
+
 				// handle menu
+
 				handleScreenSelection(&current_screen);
+				handleTitleSounds(sounds);
 				drawMenu();
 
 				break;
@@ -115,12 +141,17 @@ int main()
 					pause = !pause;
 				}
 				if (!pause) {
-					
 					DrawTextureRec(map->render_texture.texture,  (Rectangle){ 0, 0, (float)map->render_texture.texture.width, -(float)map->render_texture.texture.height }, (Vector2){ 0, 0 }, WHITE);	
 					
 					handlePlayerMovement(player, map, delta_time);
 					
 					drawEntity(player->hitbox);
+
+					current_music = music[rand_music_num];
+
+					if (!IsMusicStreamPlaying(current_music))
+						PlayMusicStream(current_music);
+					UpdateMusicStream(current_music);
 
 					for (int i = 0; i < map->enemies_quantity; i++)
 					{
@@ -179,6 +210,11 @@ int main()
 						} else {
 							winner = 1;
 							current_screen = ENDING;
+
+							strcpy(mapa_atual, "map1.txt");
+							strcpy(mapa_novo, "mapX.txt");
+							free_map(map);
+							map = read_map(mapa_atual, tile_size, scale);
 						}
 					}
 					
@@ -193,11 +229,19 @@ int main()
 					if (IsKeyPressed(KEY_TWO)) current_screen = TITLE;
 					if (IsKeyPressed(KEY_THREE)) current_screen = QUIT;
 
+					// music
+					if (IsKeyPressed(KEY_ONE)) ResumeMusicStream(current_music);
+					if (IsKeyPressed(KEY_TWO)) StopMusicStream(current_music);
 				}
 
 				break;
 
 			case ENDING:
+				if (IsMusicStreamPlaying(current_music))
+					StopMusicStream(current_music);
+
+				rand_music_num = 1 + (rand() % (N_MUSIC - 1));
+				
 				// count time to finish the game
 				double end_time, time_interval;
 				if (current_time != -1) {
@@ -250,6 +294,7 @@ int main()
 				} else {
 					drawEndingScreen();
 					handleEndingSelection(&current_screen);
+					handleEndingSounds(sounds);
 				}
 
 				break;
@@ -263,6 +308,7 @@ int main()
 				char *voltar_msg = "APERTE ESPACO PARA VOLTAR";
 				DrawText(voltar_msg, (SCREEN_WIDTH - MeasureText(voltar_msg, TAM_FONT))/2, SCREEN_HEIGHT - 50, TAM_FONT, MAROON);
 				if (IsKeyPressed(KEY_SPACE)) current_screen = TITLE;
+				if (IsKeyPressed(KEY_SPACE)) PlaySound(sounds[1]);
 				break;
 			case QUIT:
 				quit = 1;
@@ -285,6 +331,7 @@ int main()
 	free(inputBox);
 	free_map(map);
 
+	CloseAudioDevice();
 	CloseWindow();
 
 	return 0;
