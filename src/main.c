@@ -19,7 +19,7 @@ int main()
 	strcpy(mapa_atual, "map1.txt");
 	strcpy(mapa_novo, "mapX.txt");
 
-	double current_time = 0;	
+	double current_time = -1;	
 
 	InputBox *inputBox = makeInputBox(150, 150, 500, 60, 20);
 
@@ -81,6 +81,7 @@ int main()
 
 				//reset variables
 				pause = 0;
+				current_time = -1;
 				winner = 0;
 				updated_ranking = 0;
 				inputBox->done = 0;
@@ -101,6 +102,9 @@ int main()
 
 			case GAMEPLAY:
 				//reset variables
+				if(current_time == -1) {
+					current_time = GetTime();
+				}
 				updated_ranking = 0;
 				winner = 0;
 				inputBox->done = 0;
@@ -195,8 +199,14 @@ int main()
 
 			case ENDING:
 				// count time to finish the game
-				double end_time = GetTime();
-				double time_interval = end_time - current_time;
+				double end_time, time_interval;
+				if (current_time != -1) {
+					end_time = GetTime();
+					time_interval = end_time - current_time;
+					current_time = -1;
+				}
+				printf("Time interval: %.2fs\n", time_interval);
+				
 				
 				// reset positions
 				player->pos = map->spawn_pos;
@@ -212,6 +222,8 @@ int main()
 						checkInput(inputBox);
 						drawInputBox(inputBox);
 						DrawText("Aperte [ENTER] para enviar o seu nome", 20, 400, TAM_FONT, MAROON);
+					} else {
+						current_screen = TITLE;
 					}
 
 					if (inputBox->done == 1) {
@@ -231,12 +243,9 @@ int main()
 						}
 						if (updated_ranking == 1 && to_update >= 0) {
 							updateRanking(ranking, TAM_RANKING, to_update, inputBox->text, time_interval);
+							current_screen = TITLE;
 						}
 
-					}
-
-					if (inputBox->done == 1 || empty_ranking_slots <= 0 || time_interval >= ranking[TAM_RANKING - 1].time) {
-						current_screen = TITLE;
 					}
 				} else {
 					drawEndingScreen();
