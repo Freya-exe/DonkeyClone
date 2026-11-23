@@ -25,7 +25,7 @@ void handleScreenSelection(int *current_screen)
 
 void handleTitleSounds(Sound *sounds)
 {
-	if (IsKeyPressed(KEY_ONE)) PlaySound(sounds[0]);
+	if (IsKeyPressed(KEY_ONE)) PlaySound(sounds[1]);
 	if (IsKeyPressed(KEY_TWO)) PlaySound(sounds[1]);
 	if (IsKeyPressed(KEY_THREE)) PlaySound(sounds[1]);
 }

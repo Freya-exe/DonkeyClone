@@ -7,8 +7,6 @@
 #include <string.h>
 #include <time.h>
 
-#define N_MUSIC 4
-
 int main()
 {
 
@@ -37,6 +35,8 @@ int main()
 	loadMusic(music);
 
 	Music current_music;
+
+	SetMasterVolume(AUDIO_VOLUME);
 
 	// Utility function from resource_dir.h to find the resources folder and set it as the current working directory so we can load from it
 	SearchAndSetResourceDir("resources");
@@ -119,7 +119,6 @@ int main()
 				current_music = music[0];
 
 				// handle menu
-
 				handleScreenSelection(&current_screen);
 				handleTitleSounds(sounds);
 				drawMenu();
@@ -158,15 +157,15 @@ int main()
 						handleEnemyMovement(enemies[i], map, delta_time);
 						drawEntity(enemies[i]->hitbox);
 
-							if (checkOverlap(player->hitbox, enemies[i]->hitbox)) {
+						if (checkOverlap(player->hitbox, enemies[i]->hitbox)) {
 							current_screen = ENDING;
 							winner = 0;
 							inputBox->done = 0;
 							strcpy(inputBox->text, "");
 							inputBox->letterCount = 0;
-
+							PlaySound(sounds[4]);
+							PlaySound(sounds[3]);
 						}
-
 					}
 
 					// mudar mapa, map->porta deve ter uma nova localizacao baseada no proximo mapa
@@ -207,7 +206,10 @@ int main()
 
 							player = makePlayer(map->spawn_pos, tile_size, scale);
 							enemies = makeEnemies(map->enemies_pos, map->enemies_quantity, tile_size, scale);
+
+							PlaySound(sounds[0]);
 						} else {
+
 							winner = 1;
 							current_screen = ENDING;
 
@@ -215,6 +217,8 @@ int main()
 							strcpy(mapa_novo, "mapX.txt");
 							free_map(map);
 							map = read_map(mapa_atual, tile_size, scale);
+
+							PlaySound(sounds[2]);
 						}
 					}
 					

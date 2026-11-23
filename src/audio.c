@@ -11,11 +11,16 @@ void loadSounds(Sound *sounds)
 		"lesiakower-8-bit-game-over-sound-effect-331435.mp3",
 		"soundreality-explosion-8-bit-8-314694.mp3"
 	};
+	int lim = 0;
+	for (int i = 0; i < MAX_SOUNDS; i++) {
+		if (string[i][0] != '\0') lim++;
+	}
 	
 	char path[100];
-	for (int i = 0; i < MAX_SOUNDS; i++) {
-		strcpy(path, AUDIO_PATH);
-		strcat(path, string[i]);
+	for (int i = 0; i < lim; i++) {
+		strcpy(path, SOUND_PATH);
+		if (string[i][0] != '\0')
+			strcat(path, string[i]);
 		sounds[i] = LoadSound(path);
 	}
 }
@@ -28,9 +33,13 @@ void loadMusic(Music *music)
 		"reganati-chillcalming-chiptune-loop-527182.mp3",
 		"suitedfrogds-8-bit-chiptune-2-400593.mp3"
 	};
+	int lim = 0;
+	for (int i = 0; i < MAX_MUSIC; i++) {
+		if (string[i][0] != '\0') lim++;
+	}
 	
 	char path[100];
-	for (int i = 0; i < MAX_SOUNDS; i++) {
+	for (int i = 0; i < lim; i++) {
 		strcpy(path, MUSIC_PATH);
 		strcat(path, string[i]);
 		music[i] = LoadMusicStream(path);

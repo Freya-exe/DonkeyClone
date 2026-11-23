@@ -15,10 +15,13 @@
 #define TAM_STRING_MAPA 10
 
 #define MAX_SOUNDS 20
-#define AUDIO_PATH "resources/audio/sound/"
+#define SOUND_PATH "resources/audio/sound/"
 
 #define MAX_MUSIC 10
 #define MUSIC_PATH "resources/audio/music/"
+
+#define N_MUSIC 4
+#define AUDIO_VOLUME 0.2
 
 typedef struct player {
 	Vector2 pos;
