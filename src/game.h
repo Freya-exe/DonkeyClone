@@ -1,4 +1,5 @@
 #include <raylib.h>
+#include <stdio.h>
 
 #ifndef GAME_H
 #define GAME_H
@@ -84,13 +85,13 @@ enum {
 
 Player* makePlayer(Vector2 pos, float tile_size, int scale);
 Enemy** makeEnemies(Vector2* pos, int quantity, float tile_size, int scale);
-Map* read_map(char* map_path, int tile_size, int scale);
+Map* read_map(FILE* map_file, int tile_size, int scale);
 void createMapTexture(Map* map, Vector2 margin, int tile_size, int scale);
 
 void drawMenu();
 void handleScreenSelection(int *current_screen);
 
-void drawEntity(Rectangle entity_hitbox);
+void drawEntity(Rectangle entity_hitbox, Texture2D tileset, int tile_x);
 bool checkOverlap(Rectangle player, Rectangle target);
 bool checkRayCollision(Vector2 origin, Vector2 ray_dir, Rectangle target, Vector2* collision_point, Vector2* collision_normal, float* t_near_hit);
 bool checkPlayerCollision(Player* player, Rectangle* target, Vector2* collision_point, Vector2* collision_normal, float* contact_time, float delta_time);

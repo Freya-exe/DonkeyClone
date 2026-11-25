@@ -8,19 +8,15 @@
 #define SCREEN_WIDTH 1920
 #define SCREEN_HEIGHT 1080
 
-Map *read_map(char* map_path, int tile_size, int scale){
+Map *read_map(FILE* map_file, int tile_size, int scale){
 
     Map* map = malloc(sizeof(Map));
-
-    SearchAndSetResourceDir("resources");
-
-    FILE* fptr = fopen(map_path, "r");
 
     char character;
     int cols = 0;
     map->resolution = (Vector2){ 0, 1 };
 
-    while ((character = fgetc(fptr)) != EOF)
+    while ((character = fgetc(map_file)) != EOF)
     {
         
         if (cols > map->resolution.x){
@@ -36,8 +32,6 @@ Map *read_map(char* map_path, int tile_size, int scale){
 
     }
 
-    fclose(fptr);
-
     // Map tiles
     map->tiles = (char**)malloc(map->resolution.y * sizeof(char*));
 
@@ -50,7 +44,7 @@ Map *read_map(char* map_path, int tile_size, int scale){
         if (map == NULL) return NULL;
     }
 
-    fptr = fopen(map_path, "r");
+    rewind(map_file);
 
     Vector2 margin = {(GetRenderWidth() - map->resolution.x * tile_size * scale)/2, (GetRenderHeight() - map->resolution.y * tile_size * scale)/2};
     
@@ -61,11 +55,11 @@ Map *read_map(char* map_path, int tile_size, int scale){
     for (int y = 0; y < map->resolution.y; y++){
         for (int x = 0; x < map->resolution.x; x++){
 
-            character = fgetc(fptr);
+            character = fgetc(map_file);
 
             while (character == '\n' || character == '\r')
             {
-                character = fgetc(fptr);
+                character = fgetc(map_file);
             }
             
             if (character == 'p') map->spawn_pos = tileToPosition((Vector2){ x, y }, margin, tile_size * scale);
@@ -82,7 +76,7 @@ Map *read_map(char* map_path, int tile_size, int scale){
         }
     }
 
-    fclose(fptr);
+    fclose(map_file);
     
     int collision_size = 0;
     int collision_count = 0;
@@ -126,12 +120,6 @@ Map *read_map(char* map_path, int tile_size, int scale){
 
             if (is_ladder) ladder_size++;
 
-            if (ladder_count == 15 && (map->tiles[y][x] == 's' || map->tiles[y][x] == 'h' || map->tiles[y][x] == 'd'))
-                {
-                    printf("y = %d || size = %d\n", y, ladder_size);
-                }
-
-
             if (ladder_size != 0 && ((y == map->resolution.y - 1 && is_ladder) || (y < map->resolution.y - 1 && (map->tiles[y+1][x] != 's' && map->tiles[y+1][x] != 'h' && map->tiles[y+1][x] != 'd')))){
 
                 ladders_positions[ladder_count].x = x;
@@ -147,8 +135,6 @@ Map *read_map(char* map_path, int tile_size, int scale){
             }
         }
     }
-
-    printf("ladder count: %d\n", ladder_count);
 
     map->collisions_quantity = collision_count;
 

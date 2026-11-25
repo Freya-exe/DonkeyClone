@@ -12,8 +12,19 @@ void free_map(Map* map){
 
     free(map->tiles);
     free(map->collisions);
+	free(map->ladders);
     free(map);
     
+}
+
+void free_enemies(Enemy** enemies, int quantity){
+
+	for (int i = 0; i < quantity; i++){
+		free(enemies[i]);
+	}
+
+	free(enemies);
+
 }
 
 Vector2 tileToPosition(Vector2 coord, Vector2 margin, int tile_size){
